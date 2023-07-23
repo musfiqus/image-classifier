@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  django:
+    build:
+      context: ./backend
+    container_name: django_app
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEBUG=True
+      - DATABASE_ENGINE=mongoengine # Set the database engine to mongoengine
+      - MONGODB_HOST=database  # Set the MongoDB host to "database"
+      - MONGODB_PORT=27017  # Set the MongoDB port to the default MongoDB port
+      - MONGODB_NAME=image_db  # Set the MongoDB database name to "image_db"
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=musfiqus@gmail.com
+      - DJANGO_SUPERUSER_PASSWORD=admin1234
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "mongodb://database:27017" ]
+      interval: 10s
+      timeout: 2s
+      retries: 30
+      start_period: 10s
+
+  react:
+    build:
+      context: ./frontend
+    container_name: react_app
+    command: sh -c "yarn install && yarn dev"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - django
+    volumes:
+      - /app/node_modules
+      - ./frontend:/app
+    environment:
+      - CI=false
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=false
+      - WDS_SOCKET_PORT=3000 # The mapped port on the host machine
+    stdin_open: true
+    tty: true
+
+  database:
+    image: mongo:latest
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db  # Data volume for MongoDB
+
+volumes:
+  mongo_data:
