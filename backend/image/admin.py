@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import Image
+from .models import ClassificationModel, ImageClassification
 
 
 # Register your models here.
-admin.register(Image)
+admin.register(ClassificationModel)
+admin.register(ImageClassification)

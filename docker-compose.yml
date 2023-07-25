@@ -5,26 +5,26 @@ services:
     build:
       context: ./backend
     container_name: django_app
-    command: python manage.py runserver 0.0.0.0:8000
+    command: ["./start.sh"]
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
     environment:
       - DEBUG=True
-      - DATABASE_ENGINE=mongoengine # Set the database engine to mongoengine
-      - MONGODB_HOST=database  # Set the MongoDB host to "database"
-      - MONGODB_PORT=27017  # Set the MongoDB port to the default MongoDB port
-      - MONGODB_NAME=image_db  # Set the MongoDB database name to "image_db"
       - DJANGO_SUPERUSER_USERNAME=admin
       - DJANGO_SUPERUSER_EMAIL=musfiqus@gmail.com
       - DJANGO_SUPERUSER_PASSWORD=admin1234
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "mongodb://database:27017" ]
-      interval: 10s
-      timeout: 2s
-      retries: 30
-      start_period: 10s
+      - DATABASE_ENGINE=django.db.backends.postgresql
+      - DATABASE_NAME=image_db
+      - DATABASE_USER=db_admin
+      - DATABASE_PASSWORD=db7654
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+    depends_on:
+      - postgres
+    links:
+      - postgres
 
   react:
     build:
@@ -47,13 +47,17 @@ services:
     stdin_open: true
     tty: true
 
-  database:
-    image: mongo:latest
-    container_name: mongo_db
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: db_admin
+      POSTGRES_PASSWORD: db7654
+      POSTGRES_DB: image_db
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - mongo_data:/data/db  # Data volume for MongoDB
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  mongo_data:
+  postgres_data:

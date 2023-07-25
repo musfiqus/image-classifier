@@ -1,7 +1,9 @@
 import urllib
-from typing import Any, List
+from typing import Any
 
 import timm
+
+from .models import get_classification_model
 
 MODEL = None
 LABELS = None
@@ -10,18 +12,18 @@ LABELS = None
 def initialize_model() -> None:
     global MODEL
     if not MODEL:
-        MODEL = timm.create_model('efficientnetv2_rw_m.agc_in1k', pretrained=True)
+        classification_model = get_classification_model()
+        MODEL = timm.create_model(classification_model.model_name, pretrained=True)
         MODEL = MODEL.eval()
 
 
 def initialize_labels() -> None:
     global LABELS
     if not LABELS:
-        url, filename = (
-            "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt", "imagenet_classes.txt"
-        )
-        urllib.request.urlretrieve(url, filename)
-        with open("imagenet_classes.txt", "r") as f:
+        classification_model = get_classification_model()
+        url, file_name = classification_model.labels_url, classification_model.get_labels_file_name()
+        urllib.request.urlretrieve(url, file_name)
+        with open(file_name, "r") as f:
             LABELS = [s.strip() for s in f.readlines()]
 
 
@@ -31,7 +33,7 @@ def get_model() -> Any:
     return MODEL
 
 
-def get_labels() -> List[str]:
+def get_labels() -> Any:
     global LABELS
     initialize_labels()
     return LABELS

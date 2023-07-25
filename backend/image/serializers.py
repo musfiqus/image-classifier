@@ -1,8 +1,8 @@
-from rest_framework_mongoengine.serializers import DocumentSerializer
-from .models import Image
+from rest_framework.serializers import ModelSerializer
+from .models import ImageClassification
 
 
-class ImageSerializer(DocumentSerializer):
+class ImageClassificationSerializer(ModelSerializer):
     class Meta:
-        model = Image
+        model = ImageClassification
         fields = '__all__'
