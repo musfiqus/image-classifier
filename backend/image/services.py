@@ -43,7 +43,8 @@ def is_classification_required(
     return False
 
 
-def get_image_classification(image_hash: Optional[str]) -> JsonResponse:
+def get_classification(image_hash: Optional[str]) -> JsonResponse:
+    print(image_hash)
     start_time = time.time()
     current_classification = ImageClassification.objects.filter(image_hash=image_hash).first()
 
@@ -52,13 +53,13 @@ def get_image_classification(image_hash: Optional[str]) -> JsonResponse:
         return JsonResponse(ApiResponse(
             success=True,
             data=ImageClassificationSerializer(current_classification).data,
-            message=f'{processing_time} ms'))
+            message=f'{processing_time} ms'), status=status.HTTP_200_OK)
     else:
-        processing_time = round((time.time() - start_time) * 1000, 2)
         return JsonResponse(ApiResponse(
             success=False,
             data=None,
-            message=f'{processing_time} ms'))
+            message=f'Unable to get classification for the provided image.'
+        ), status=status.HTTP_404_NOT_FOUND)
 
 
 def preprocess_image(image_file: InMemoryUploadedFile, model: Any) -> Any:
@@ -116,11 +117,9 @@ def classify_image(image_file):
             message=f'{processing_time} ms'
         ), status=status.HTTP_200_OK)
     except Exception as e:
-        print(e)
         traceback.print_exc()
-        processing_time = round((time.time() - start_time) * 1000, 2)
         return JsonResponse(ApiResponse(
             success=False,
             data=None,
-            message=f'{processing_time} ms'
+            message=f'Unable to classify the provided image.'
         ), status=status.HTTP_400_BAD_REQUEST)
