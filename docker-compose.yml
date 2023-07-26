@@ -44,6 +44,7 @@ services:
       - WATCHPACK_POLLING=true
       - FAST_REFRESH=false
       - WDS_SOCKET_PORT=3000 # The mapped port on the host machine
+      - REACT_APP_BACKEND_URL=http://localhost:8000
     stdin_open: true
     tty: true
 

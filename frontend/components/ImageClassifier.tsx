@@ -1,34 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useReducer } from 'react';
 import ImageSelectorBox from './ImageSelectorBox';
+import { ImageClassificationApi } from '@/api/ImageClassification';
+import { ImageClassificationReducer } from '@/StateManagement/ImageClassification/reducer';
+import { ActionType } from '@/StateManagement/ImageClassification/actions';
 
 interface ImageClassifierProps {}
 
 const ImageClassifier: React.FC<ImageClassifierProps> = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [result, setResult] = useState<string | null>(null);
-  const [resultVisible, setResultVisible] = useState<boolean>(false);
+  const [state, dispatch] = useReducer(ImageClassificationReducer, { imageClassification: null });
 
   const handleImageSelected = (file: File | null) => {
     setSelectedImage(file);
-    setResult(null);
-    setResultVisible(false);
+    state.imageClassification = null;
   };
 
   const handleClassifyClick = async () => {
     if (!selectedImage) return;
     try {
-      const classificationResult = await fetchAPI(selectedImage);
-      setResult(classificationResult);
-      setResultVisible(true);
+      const api = new ImageClassificationApi();
+      const classificationResult = await api.classifyImage(selectedImage, selectedImage.name);
+      dispatch({ type: ActionType.Create, payload: classificationResult });
     } catch (error) {
       console.error('Error classifying the image:', error);
-      setResult('Failed to classify.');
-      setResultVisible(true);
+      dispatch({ type: ActionType.Create, payload: null });
     }
   };
 
   return (
-    <div className={`w-full max-w-5xl flex flex-col lg:flex-row items-center justify-center font-mono text-sm bg-gray-200 transition-all ease-in-out duration-500 ${resultVisible ? 'justify-start' : 'justify-center'}`}>
+    <div className={`w-full max-w-5xl flex flex-col lg:flex-row items-center justify-center font-mono text-sm bg-gray-200 transition-all ease-in-out duration-500 ${state.imageClassification ? 'justify-start' : 'justify-center'}`}>
       <div className="flex flex-col items-center lg:w-1/2 transition-all ease-in-out duration-500">
         <ImageSelectorBox onImageSelected={handleImageSelected} />
 
@@ -40,16 +40,16 @@ const ImageClassifier: React.FC<ImageClassifierProps> = () => {
         </button>
       </div>
 
-      {resultVisible && (
+      {state.imageClassification && (
         <div className="flex flex-col items-center mt-4 lg:mt-0 lg:ml-4 lg:w-1/2 transition-all ease-in-out duration-500">
           <div className="w-full h-20 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
-            {result === 'Failed to classify.' ? (
-              <span className="text-red-500">Failed</span>
-            ) : (
+            {state.imageClassification ? (
               <span>Result</span>
+            ) : (
+              <span className="text-red-500">Failed</span>
             )}
           </div>
-          <div className="mt-4 text-center">{result}</div>
+          <div className="mt-4 text-center">{state.imageClassification ? JSON.stringify(state.imageClassification.predictions) : 'Failed to classify.'}</div>
         </div>
       )}
     </div>
@@ -57,8 +57,3 @@ const ImageClassifier: React.FC<ImageClassifierProps> = () => {
 };
 
 export default ImageClassifier;
-
-const fetchAPI = async (imageFile: File): Promise<string> => {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return 'Classification Result: [Class A: 80%, Class B: 15%, Class C: 5%]';
-};
