@@ -12,12 +12,15 @@ const ImageClassifier: React.FC<ImageClassifierProps> = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [state, dispatch] = useReducer(ImageClassificationReducer, { imageClassification: null });
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // Add this line
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleImageSelected = (file: File | null) => {
+  const handleImageSelected = (file: File | null, error: string | null) => {
+    setError(error); // Set error from ImageSelectorBox
+    if (error) {
+      return;
+    }
     setSelectedImage(file);
     state.imageClassification = null;
-    setError(null);
   };
 
   const classifyImage = async () => {
@@ -32,19 +35,19 @@ const ImageClassifier: React.FC<ImageClassifierProps> = () => {
       setError('Error classifying the image');
       dispatch({ type: ActionType.Create, payload: null });
     } finally {
-      setIsLoading(false); // After finishing the process, set loading state to false
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleClassifyClick = async () => {
-    setIsLoading(true); // Start loading here
+    setIsLoading(true);
     if (!selectedImage) return;
     const api = new ImageClassificationApi();
 
     try {
       const classificationResult = await api.getImageClassification(selectedImage);
       dispatch({ type: ActionType.Create, payload: classificationResult });
-      setIsLoading(false); // Set loading state to false if image classification succeeded without an error
+      setIsLoading(false);
     } catch (error) {
       console.error('Error getting the image classification:', error);
       classifyImage();
@@ -57,11 +60,11 @@ const ImageClassifier: React.FC<ImageClassifierProps> = () => {
         <ImageSelectorBox onImageSelected={handleImageSelected} />
 
         <button
-          disabled={isLoading} // Disable the button while loading
+          disabled={isLoading || !!error} // Disable the button while loading or if there's an error
           className="w-64 px-6 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mt-4"
           onClick={handleClassifyClick}
         >
-          {isLoading ? <><SpinnerIcon /> Classifying...</> : 'Classify'} {/* Show spinner and "Loading..." text if loading, otherwise show "Classify" */}
+          {isLoading ? <><SpinnerIcon /> Classifying...</> : 'Classify'}
         </button>
 
         {error && <p className="text-red-500 mt-4">{error}</p>}

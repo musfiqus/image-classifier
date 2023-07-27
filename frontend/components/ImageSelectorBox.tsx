@@ -1,44 +1,69 @@
 import React, { useState, ChangeEvent, DragEvent } from 'react';
 import Image from 'next/image';
+import { isImageFile, isFileSizeValid } from '@/utils';
+import CloseIcon from './CloseIcon';
 
 interface ImageSelectorBoxProps {
-  onImageSelected: (file: File | null) => void;
+  onImageSelected: (file: File | null, error: string | null) => void;
 }
 
 const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
 
   const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log(file);
     if (file) {
-      setSelectedImage(file);
-      onImageSelected(file);
+      if (!isImageFile(file)) {
+        onImageSelected(null, 'Please select a valid image file');
+      } else if (!isFileSizeValid(file)) {
+        onImageSelected(null, 'File size exceeds the 4MB limit');
+      } else {
+        setSelectedImage(file);
+        onImageSelected(file, null);
+      }
     }
   };
 
   const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    setIsDragging(false);
     const file = event.dataTransfer.files?.[0];
     if (file) {
-      setSelectedImage(file);
-      onImageSelected(file);
+      if (!isImageFile(file)) {
+        onImageSelected(null, 'Please drop a valid image file');
+      } else if (!isFileSizeValid(file)) {
+        onImageSelected(null, 'File size exceeds the 4MB limit');
+      } else {
+        setSelectedImage(file);
+        onImageSelected(file, null);
+      }
     }
   };
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
-    onImageSelected(null);
+    onImageSelected(null, null);
   };
 
   return (
     <div
-      className="relative flex items-center justify-center w-full h-96 mb-8 border-4 border-dashed rounded-lg border-gray-400 border-opacity-50 cursor-pointer"
+      className={`relative flex items-center justify-center w-full h-96 mb-8 border-4 border-dashed rounded-lg cursor-pointer ${isHovered || isDragging ? 'border-blue-500' : 'border-gray-400 border-opacity-50'}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {selectedImage ? (
@@ -46,23 +71,15 @@ const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected }) 
           <Image
             src={URL.createObjectURL(selectedImage)}
             alt="Selected Image"
-            width={200}
-            height={200}
+            width={400}
+            height={400}
             className="object-cover rounded-lg"
           />
           <button
             className="absolute top-0 right-0 m-2 p-1 rounded-full bg-white bg-opacity-80 hover:bg-opacity-100"
             onClick={handleRemoveImage}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <CloseIcon />
           </button>
         </>
       ) : (
@@ -71,7 +88,7 @@ const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected }) 
             htmlFor="imageInput"
             className="relative w-full h-full flex items-center justify-center"
           >
-            <p className="text-gray-400">
+            <p className="text-gray-400 p-4">
               Drag and drop an image file here or{' '}
               <span className="text-blue-500 cursor-pointer">click to select an image</span>
             </p>

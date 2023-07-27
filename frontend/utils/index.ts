@@ -1,4 +1,4 @@
-import Rusha from 'rusha'
+import Rusha from 'rusha';
 
 function readAsArrayBuffer(file: File): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {
@@ -23,6 +23,13 @@ export function isImageFile(file: File): boolean {
     const acceptedImageTypes = ['image/jpeg', 'image/png'];
     return file && acceptedImageTypes.includes(file.type);
 }
+
+export function isFileSizeValid(file: File): boolean {
+    const maxSizeMB = 4; // Maximum size in MB
+    const maxSizeBytes = maxSizeMB * 1e6;
+    return file && file.size <= maxSizeBytes;
+}
+
 
 export function getFileExtension(file: File): string {
     const fileName = file.name;

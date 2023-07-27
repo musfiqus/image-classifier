@@ -1,4 +1,3 @@
-// ClassificationResult.tsx
 import React from 'react';
 import { ImageClassification } from '@/api/ImageClassification';
 
