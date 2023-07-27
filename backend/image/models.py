@@ -22,7 +22,7 @@ class ImageClassification(Model):
 class ClassificationModel(Model):
     model_name = CharField(
         choices=ALL_AVAILABLE_MODELS,
-        default=(settings.DEFAULT_CLASSIFICATION_MODEL, settings.DEFAULT_CLASSIFICATION_MODEL),
+        default=settings.DEFAULT_CLASSIFICATION_MODEL,
         max_length=128
     )
     labels_url = CharField(default=settings.DEFAULT_LABELS_URL, max_length=256)
