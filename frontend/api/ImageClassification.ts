@@ -1,4 +1,5 @@
 import axios, {AxiosResponse} from 'axios';
+import { getFileExtension, getImageHash } from '@/utils'
 
 const API_URL = (process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000') + '/image';
 
@@ -24,11 +25,14 @@ interface ResponseData {
 
 export class ImageClassificationApi {
 
-    async classifyImage(image: File, imageName: string): Promise<ResponseData['data']> {
+    async classifyImage(image: File): Promise<ResponseData['data']> {
         try {
+            const fileExtension = getFileExtension(image)
+            const imageHash = await getImageHash(image)
             const config = {
+                // This header is required for Django rest_framework to handle files
                 headers: {
-                    'Content-Disposition': `form-data; name="file"; filename="${imageName}"`
+                    'Content-Disposition': `form-data; name="file"; filename="${imageHash}.${fileExtension}"`
                 }
             };
 
@@ -50,9 +54,10 @@ export class ImageClassificationApi {
         }
     }
 
-    async getImageClassification(image_hash: string): Promise<ResponseData['data']> {
+    async getImageClassification(image: File): Promise<ResponseData['data']> {
         try {
-            const response: AxiosResponse<ResponseData> = await axios.get(`${API_URL}/get_classification/?image_hash=${image_hash}`);
+            const imageHash = await getImageHash(image)
+            const response: AxiosResponse<ResponseData> = await axios.get(`${API_URL}/get_classification/?image_hash=${imageHash}`);
             if (response.data.success) {
                 return response.data.data;
             } else {
