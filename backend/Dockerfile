@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y postgresql-client
 
 # Install cpu specific pytorch
 RUN pip install --upgrade pip
-RUN pip install torch==2.0.1+cpu torchaudio==2.0.2+cpu torchvision==0.15.2+cpu -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip install --extra-index-url https://download.pytorch.org/whl/cpu/ torch torchvision torchaudio torchtext
 
 # Install Python dependencies
 COPY requirements.txt /app/requirements.txt
@@ -30,6 +30,9 @@ COPY . /app/
 
 # Expose the Django development server port
 EXPOSE 8000
+
+# Grant execute permission to the start.sh script
+RUN chmod +x start.sh
 
 # Run Django development server
 CMD ["./start.sh"]
