@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent, DragEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent, DragEvent } from 'react';
 import Image from 'next/image';
 import { isImageFile, isFileSizeValid } from '@/utils';
 import CloseIcon from './CloseIcon';
@@ -10,8 +10,20 @@ interface ImageSelectorBoxProps {
 
 const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected, disabled }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  // persist image object URL to prevent flickering
+  useEffect(() => {
+    if (selectedImage) {
+      const imageUrl = URL.createObjectURL(selectedImage);
+      setSelectedImageUrl(imageUrl);
+      return () => {
+        URL.revokeObjectURL(imageUrl);
+      };
+    }
+  }, [selectedImage]);
 
   const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
@@ -59,6 +71,7 @@ const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected, di
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
+    setSelectedImageUrl(null);
     onImageSelected(null, null);
   };
 
@@ -71,10 +84,10 @@ const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected, di
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {selectedImage ? (
+      {selectedImageUrl ? (
         <>
           <Image
-            src={URL.createObjectURL(selectedImage)}
+            src={selectedImageUrl}
             alt="Selected Image"
             layout="fill"
             objectFit="contain"
@@ -82,6 +95,7 @@ const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected, di
           />
           <button
             className="absolute top-0 right-0 m-2 p-1 rounded-full bg-white bg-opacity-80 hover:bg-opacity-100"
+            disabled={disabled}
             onClick={handleRemoveImage}
           >
             <CloseIcon />
