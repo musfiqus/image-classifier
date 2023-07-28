@@ -5,14 +5,16 @@ import CloseIcon from './CloseIcon';
 
 interface ImageSelectorBoxProps {
   onImageSelected: (file: File | null, error: string | null) => void;
+  disabled: boolean;
 }
 
-const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected }) => {
+const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected, disabled }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
   const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     const file = event.target.files?.[0];
     if (file) {
       if (!isImageFile(file)) {
@@ -28,16 +30,19 @@ const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected }) 
 
   const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    if (disabled) return;
     setIsDragging(true);
   };
 
   const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    if (disabled) return;
     setIsDragging(false);
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    if (disabled) return;
     setIsDragging(false);
     const file = event.dataTransfer.files?.[0];
     if (file) {
@@ -59,9 +64,9 @@ const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected }) 
 
   return (
     <div
-      className={`relative flex items-center justify-center w-full h-96 mb-8 border-4 border-dashed rounded-lg cursor-pointer ${isHovered || isDragging ? 'border-blue-500' : 'border-gray-400 border-opacity-50'}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`relative flex items-center justify-center w-full h-96 mb-8 border-4 border-dashed rounded-lg cursor-pointer ${(!selectedImage && (isHovered || isDragging)) ? 'border-blue-500' : 'border-gray-400 border-opacity-50'} ${disabled ? 'pointer-events-none' : ''}`}
+      onMouseEnter={() => !disabled && setIsHovered(true)}
+      onMouseLeave={() => !disabled && setIsHovered(false)}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -71,8 +76,8 @@ const ImageSelectorBox: React.FC<ImageSelectorBoxProps> = ({ onImageSelected }) 
           <Image
             src={URL.createObjectURL(selectedImage)}
             alt="Selected Image"
-            width={400}
-            height={400}
+            layout="fill"
+            objectFit="contain"
             className="object-cover rounded-lg"
           />
           <button

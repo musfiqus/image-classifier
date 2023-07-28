@@ -12,15 +12,16 @@ export interface ImageClassification {
     image_hash: string;
     classification_model: string;
     labels_url: string;
-    predictions: Prediction;
+    in_queue: boolean;
+    predictions: Prediction | null;
     date_created: string;
     date_updated: string;
 }
 
 interface ResponseData {
     success: boolean;
-    data?: ImageClassification;
-    message?: string;
+    data: ImageClassification | null;
+    message: string;
 }
 
 export class ImageClassificationApi {
@@ -54,10 +55,10 @@ export class ImageClassificationApi {
         }
     }
 
-    async getImageClassification(image: File): Promise<ResponseData['data']> {
+    async getImageClassification(image: File, checkProgress: boolean): Promise<ResponseData['data']> {
         try {
             const imageHash = await getImageHash(image)
-            const response: AxiosResponse<ResponseData> = await axios.get(`${API_URL}/get_classification/?image_hash=${imageHash}`);
+            const response: AxiosResponse<ResponseData> = await axios.get(`${API_URL}/get_classification/?image_hash=${imageHash}&check_progress=${checkProgress ? 1 : 0}`);
             if (response.data.success) {
                 return response.data.data;
             } else {

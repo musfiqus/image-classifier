@@ -18,10 +18,6 @@ class Prediction(TypedDict):
 
 
 def preprocess_image(image_file: Image.Image, model: Any) -> Any:
-    # image_data = io.BytesIO(image_file.read())
-    # # Converting the binary file to Pillow Image file with RGB colorspace
-    # img = Image.open(image_data).convert('RGB')
-
     # Pull the image size, interpolation method, center cropping configs for the model
     config = resolve_data_config({}, model=model)
 
