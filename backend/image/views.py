@@ -7,7 +7,8 @@ from .services import classify_image, get_classification
 @api_view(['GET'])
 def get_classification_view(request):
     image_hash = request.query_params.get('image_hash', None)
-    return get_classification(image_hash)
+    check_progress = int(request.query_params.get('check_progress', 0)) == 1
+    return get_classification(image_hash, check_progress)
 
 
 @api_view(['POST'])

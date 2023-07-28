@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-40(v3$ax#2@e6&up5@did1!27b0!q2c(vihu4n4qj!&e+v+35*'
+SECRET_KEY = os.getenv('DEBUG_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'image',
     'corsheaders',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -80,6 +81,16 @@ DATABASES = {
         'PASSWORD': os.getenv('DATABASE_PASSWORD'),
         'HOST': os.getenv('DATABASE_HOST'),
         'PORT': os.getenv('DATABASE_PORT'),
+    }
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
 }
 
@@ -128,13 +139,19 @@ MEDIA_URL = '/media/'
 
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-DEFAULT_CLASSIFICATION_MODEL = 'efficientnetv2_rw_m.agc_in1k'
-DEFAULT_LABELS_URL = 'https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt'
+DEFAULT_CLASSIFICATION_MODEL = os.getenv('DEFAULT_CLASSIFICATION_MODEL')
+DEFAULT_LABELS_URL = os.getenv('DEFAULT_LABELS_URL')
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
+    os.getenv('DEBUG_FRONTEND_URL'),
 ]
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'Content-Disposition',
 ]
+
+CELERY_BROKER_URL = os.getenv('REDIS_URL')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL')
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'

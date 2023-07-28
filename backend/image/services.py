@@ -1,20 +1,16 @@
-import io
-import time
 import traceback
-from typing import TypedDict, Optional, List, Any
-
-import torch
-from PIL import Image
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.http import JsonResponse
-from django.utils import timezone
-from rest_framework import status
-from timm.data import resolve_data_config, create_transform
 from pathlib import Path
+from typing import TypedDict, Optional
 
-from .classifier import get_model, get_labels
-from .models import ImageClassification, get_classification_model, ClassificationModel
+from django.core.files.storage import FileSystemStorage
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db.models import Q
+from django.http import JsonResponse
+from rest_framework import status
+
+from .models import ImageClassification
 from .serializers import ImageClassificationSerializer
+from .tasks import do_image_classification
 
 
 class ApiResponse(TypedDict):
@@ -23,103 +19,72 @@ class ApiResponse(TypedDict):
     message: str
 
 
-class Prediction(TypedDict):
-    classes: List[str]
-    probabilities: List[float]
+def get_classification(image_hash: Optional[str], check_progress: bool = False) -> JsonResponse:
+    query = Q(image_hash=image_hash)
 
+    # We are not sending responses without prediction values if it's a regular request
+    if not check_progress:
+        query &= Q(predictions__isnull=False)
 
-def is_classification_required(
-        current_classification: ImageClassification
-) -> bool:
-    if not current_classification:
-        return True
+    current_classification = ImageClassification.objects.filter(query).first()
 
-    classification_model = get_classification_model()
-    if classification_model.model_name != current_classification.classification_model:
-        return True
-    if classification_model.labels_url != current_classification.labels_url:
-        return True
-
-    return False
-
-
-def get_classification(image_hash: Optional[str]) -> JsonResponse:
-    print(image_hash)
-    start_time = time.time()
-    current_classification = ImageClassification.objects.filter(image_hash=image_hash).first()
-
-    if not is_classification_required(current_classification):
-        processing_time = round((time.time() - start_time) * 1000, 2)
+    if current_classification:
         return JsonResponse(ApiResponse(
             success=True,
             data=ImageClassificationSerializer(current_classification).data,
-            message=f'{processing_time} ms'), status=status.HTTP_200_OK)
+            message=''), status=status.HTTP_200_OK)
     else:
         return JsonResponse(ApiResponse(
             success=False,
             data=None,
-            message=f'Unable to get classification for the provided image.'
+            message='Image classification not found.'
         ), status=status.HTTP_404_NOT_FOUND)
 
 
-def preprocess_image(image_file: InMemoryUploadedFile, model: Any) -> Any:
-    image_data = io.BytesIO(image_file.file.read())
-    img = Image.open(image_data).convert('RGB')
-    config = resolve_data_config({}, model=model)
-    transform = create_transform(**config)
-    tensor = transform(img).unsqueeze(0)
-    return tensor
-
-
-def classify_image(image_file):
-    start_time = time.time()
+def classify_image(image_file: InMemoryUploadedFile) -> JsonResponse:
     try:
         if not image_file or not image_file.name:
-            return JsonResponse({'error': 'Image file not provided.'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(ApiResponse(
+                success=False,
+                data=None,
+                message='Image file not provided'
+            ), status=status.HTTP_400_BAD_REQUEST)
 
-        classification_model = get_classification_model()
         image_hash = Path(image_file.name).stem
-        current_classification = ImageClassification.objects.filter(image_hash=image_hash).first()
 
-        model = get_model()
-        labels = get_labels()
+        # get_or_create returns a tuple, getting the first element which is the object
+        current_classification = ImageClassification.objects.get_or_create(image_hash=image_hash)[0]
 
-        image_tensor = preprocess_image(image_file, model)
-        with torch.no_grad():
-            out = model(image_tensor)
-        probabilities = torch.nn.functional.softmax(out[0], dim=0)
+        # Already in queue, no need to create another task
+        if current_classification.in_queue:
+            return JsonResponse(ApiResponse(
+                success=True,
+                data=ImageClassificationSerializer(current_classification).data,
+                message=''
+            ), status=status.HTTP_200_OK)
 
-        top5_prob, top5_catid = torch.topk(probabilities, 5)
+        # Temporarily save the image
+        storage = FileSystemStorage()
+        storage.save(image_file.name, image_file.file)
 
-        predictions = Prediction(
-            classes=[labels[top5_catid[i]] for i in range(top5_prob.size(0))],
-            probabilities=[top5_prob[i].item() for i in range(top5_prob.size(0))],
-        )
-
-        if not current_classification:
-            current_classification = ImageClassification(
-                image_hash=image_hash,
-                classification_model=classification_model.model_name,
-                labels_url=classification_model.labels_url,
-                date_created=timezone.now()
-            )
-
-        current_classification.classification_model = classification_model.model_name
-        current_classification.labels_url = classification_model.labels_url
-        current_classification.predictions = predictions
-        current_classification.date_updated = timezone.now()
+        current_classification.predictions = None
+        current_classification.in_queue = True
         current_classification.save()
 
-        processing_time = round((time.time() - start_time) * 1000, 2)
+        # Send to celery for heavy ML task
+        do_image_classification.delay(
+            image_hash=image_hash, image_path=storage.path(image_file.name), image_name=image_file.name
+        )
+
         return JsonResponse(ApiResponse(
             success=True,
             data=ImageClassificationSerializer(current_classification).data,
-            message=f'{processing_time} ms'
+            message=''
         ), status=status.HTTP_200_OK)
     except Exception as e:
         traceback.print_exc()
         return JsonResponse(ApiResponse(
             success=False,
             data=None,
-            message=f'Unable to classify the provided image.'
+            message='Unable to classify the provided image.'
         ), status=status.HTTP_400_BAD_REQUEST)

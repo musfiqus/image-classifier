@@ -14,6 +14,10 @@ wait_for_postgres
 echo "Apply database migrations..."
 python manage.py migrate
 
+# Create admin
+echo "Create superuser..."
+python manage.py initadmin
+
 # Start server
-echo "Starting server"
+echo "Starting server..."
 python manage.py runserver 0.0.0.0:8000
