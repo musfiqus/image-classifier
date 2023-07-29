@@ -46,12 +46,11 @@ These can be installed by following the instructions at the following links:
 2. Build and start the Docker containers:
 
     ```bash
-    docker compose up --build -d
+    docker compose up --build
     ```
 
-    This command will start all the services defined in the `docker-compose.yml` file in detached mode. You should now be able to access the application:
+    This command will start all the services defined in the `docker-compose.yml` file in detached mode. You should  be able to access the application after all the services are up and running.
 
-   - Django application: [http://localhost:8000](http://localhost:8000)
    - NextJS application: [http://localhost:3000](http://localhost:3000)
 
 3. Available Docker Compose services:
@@ -60,6 +59,8 @@ These can be installed by following the instructions at the following links:
    3. `postgres`: This service manages the PostgreSQL database used for data persistence.
    4. `celery`: This service is responsible for task queuing using Celery.
    5. `redis`: This service is used for in-memory data storage and task management.
+
+4. The first classification request downloads the pretrained models. So it might take a while to classify or receive  a timeout on the first try depending on the internet speed.
 ---
 
 ## Running Tests

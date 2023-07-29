@@ -51,7 +51,7 @@ const ImageClassifier: React.FC<ImageClassifierProps> = () => {
       clearInterval(interval);
       setError("Error classifying the image.");
       setIsLoading(false);
-    }, 30000);
+    }, 120000);
 
     let interval = setInterval(async () => {
       try {

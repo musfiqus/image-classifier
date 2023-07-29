@@ -8,7 +8,7 @@ from django.core.files.storage import FileSystemStorage
 from timm.data import resolve_data_config, create_transform
 
 from core import celery_app
-from .classifier import get_model, get_labels
+from .classifier import get_model, get_labels, initialize_model, initialize_labels
 from .models import get_classification_model, ImageClassification
 
 
@@ -77,3 +77,14 @@ def do_image_classification(image_hash: str, image_path: str, image_name: str) -
     storage.delete(image_name)
 
     return current_classification is not None
+
+
+@celery_app.task
+def initialize_models_task() -> bool:
+    try:
+        initialize_model()
+        initialize_labels()
+        return True
+    except Exception as e:
+        print('Failed to initialize models')
+        return False

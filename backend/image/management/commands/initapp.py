@@ -2,6 +2,7 @@ from decouple import config
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
+from ...tasks import initialize_models_task
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
@@ -15,3 +16,5 @@ class Command(BaseCommand):
                 email=email, username=username, password=password)
         else:
             print('Admin account has already been initialized.')
+            
+        initialize_models_task.delay()

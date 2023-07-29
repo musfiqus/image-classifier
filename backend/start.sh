@@ -14,9 +14,9 @@ wait_for_postgres
 echo "Apply database migrations..."
 python manage.py migrate
 
-# Create admin
-echo "Create superuser..."
-python manage.py initadmin
+# Initialize models
+echo "Initializing models..."
+python manage.py initapp
 
 # Start server
 echo "Starting server..."
