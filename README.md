@@ -39,8 +39,8 @@ These can be installed by following the instructions at the following links:
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/musfiqus/web_image_classification.git
-    cd web_image_classification
+    git clone https://github.com/musfiqus/image-classifier.git
+    cd image-classifier
     ```
 
 2. Build and start the Docker containers:
