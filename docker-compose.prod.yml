@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  django:
+    build:
+      context: ./backend
+    container_name: django_app
+    command: ["./start.sh"]
+    ports:
+      - "${DJANGO_HOST_PORT}:${DJANGO_CONTAINER_PORT}"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+
+    depends_on:
+      - postgres
+      - redis
+    links:
+      - postgres
+
+  react:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: react_app
+    command: sh -c "yarn install && yarn build && yarn start"
+    ports:
+      - "${REACT_HOST_PORT}:${REACT_CONTAINER_PORT}"
+    depends_on:
+      - django
+    volumes:
+      - /app/node_modules
+      - ./frontend:/app
+    env_file:
+      - .env
+    stdin_open: true
+    tty: true
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_HOST_PORT}:${POSTGRES_CONTAINER_PORT}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  celery:
+    build: ./backend
+    command: celery -A core worker --loglevel=info
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - django
+      - redis
+    env_file:
+      - .env
+
+
+  redis:
+    image: redis:latest
+    ports:
+      - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
+
+volumes:
+  postgres_data:

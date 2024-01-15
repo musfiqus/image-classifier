@@ -1,0 +1,35 @@
+# Use the official Node.js image as the base image
+FROM node:18.17.0 as builder
+
+# Set the working directory
+WORKDIR /app
+
+# Install Node.js dependencies
+COPY package.json /app/package.json
+COPY yarn.lock /app/yarn.lock
+RUN yarn install
+
+# Copy the Next.js app source code
+COPY . /app/
+
+# Build the Next.js app
+RUN yarn build
+
+# Start with a base image containing Node.js runtime
+FROM node:18.17.0-slim
+
+WORKDIR /app
+
+# Copy over the built artifact from the previous step
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/yarn.lock ./yarn.lock
+
+# Install production dependencies
+RUN yarn install --production
+
+# Expose the Next.js app port
+EXPOSE 3000
+
+CMD ["yarn", "start"]
