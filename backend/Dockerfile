@@ -32,7 +32,8 @@ COPY . /app/
 EXPOSE 8000
 
 # Grant execute permission to the start.sh script
-RUN chmod +x start.sh
+RUN sed -i 's/\r$//' start.sh  && \  
+        chmod +x start.sh
 
 # Run Django development server
 CMD ["./start.sh"]

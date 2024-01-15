@@ -5,7 +5,6 @@ services:
     build:
       context: ./backend
     container_name: django_app
-    command: ["./start.sh"]
     ports:
       - "${DJANGO_HOST_PORT}:${DJANGO_CONTAINER_PORT}"
     volumes:
@@ -61,6 +60,7 @@ services:
 
   redis:
     image: redis:latest
+    command: --port ${REDIS_CONTAINER_PORT} 
     ports:
       - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
 

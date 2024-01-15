@@ -29,7 +29,4 @@ COPY --from=builder /app/yarn.lock ./yarn.lock
 # Install production dependencies
 RUN yarn install --production
 
-# Expose the Next.js app port
-EXPOSE 3000
-
 CMD ["yarn", "start"]

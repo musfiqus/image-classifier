@@ -5,7 +5,7 @@ interface ClassificationResultProps {
   imageClassification: ImageClassification | null;
 }
 
-const ClassificationResult: React.FC<ClassificationResultProps> = ({ imageClassification }) => {
+const ClassificationResult: React.FC<ClassificationResultProps> = ({ imageClassification }: ClassificationResultProps) => {
   const getColor = (probability: number) => {
     if (probability >= 0.8) return 'bg-green-500';
     if (probability >= 0.6) return 'bg-lime-500';
@@ -19,7 +19,7 @@ const ClassificationResult: React.FC<ClassificationResultProps> = ({ imageClassi
       <div className="w-full text-2xl font-bold mb-4">
         <span>Result</span>
       </div>
-      {imageClassification?.predictions.classes.map((className, index) => (
+      {imageClassification?.predictions?.classes.map((className, index) => (
         <div key={index} className="w-full mt-2">
           <div className="flex justify-between mb-1">
             <span className="text-base font-medium">{className}</span>

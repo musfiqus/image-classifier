@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY') or os.getenv('DEBUG_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG')
+DEBUG = os.getenv('DJANGO_DEBUG') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS').split(' ')
 
 # Application definition
 
@@ -143,8 +143,7 @@ DEFAULT_CLASSIFICATION_MODEL = os.getenv('DEFAULT_CLASSIFICATION_MODEL')
 DEFAULT_LABELS_URL = os.getenv('DEFAULT_LABELS_URL')
 
 CORS_ALLOWED_ORIGINS = [
-    os.getenv('DEBUG_FRONTEND_URL'),
-    os.getenv('FRONTEND_URL')
+    os.getenv('FRONTEND_URL') or os.getenv('DEBUG_FRONTEND_URL'),
 ]
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
