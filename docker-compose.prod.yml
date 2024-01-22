@@ -2,16 +2,13 @@ version: '3.8'
 
 services:
   django:
-    build:
-      context: ./backend
-    container_name: django_app
-    ports:
-      - "${DJANGO_HOST_PORT}:${DJANGO_CONTAINER_PORT}"
-    volumes:
-      - ./backend:/app
+    image: musfiqus/portfolio_server:${IMAGE_CLASSIFIER_BACKEND_TAG}
     env_file:
       - .env
-
+    volumes:
+      - ./backend:/app
+    ports:
+      - "${DJANGO_HOST_PORT}:${DJANGO_CONTAINER_PORT}"
     depends_on:
       - postgres
       - redis
@@ -19,11 +16,7 @@ services:
       - postgres
 
   react:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-    container_name: react_app
-    command: sh -c "yarn install && yarn build && yarn start"
+    image: musfiqus/portfolio_server:${IMAGE_CLASSIFIER_FRONTEND_TAG}
     ports:
       - "${REACT_HOST_PORT}:${REACT_CONTAINER_PORT}"
     depends_on:
@@ -47,7 +40,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   celery:
-    build: ./backend
+    image: musfiqus/portfolio_server:${IMAGE_CLASSIFIER_BACKEND_TAG}
     command: celery -A core worker --loglevel=info
     volumes:
       - ./backend:/app
@@ -56,7 +49,6 @@ services:
       - redis
     env_file:
       - .env
-
 
   redis:
     image: redis:latest

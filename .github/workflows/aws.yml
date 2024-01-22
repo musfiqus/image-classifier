@@ -6,7 +6,35 @@ on:
       - master
 
 jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Django and Celery image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        push: true
+        tags: musfiqus/portfolio_server:${{ github.sha }}-image-classifier-backend
+
+    - name: Build and push React image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        push: true
+        tags: musfiqus/portfolio_server:${{ github.sha }}-image-classifier-frontend
+
   deploy:
+    needs: build_and_push
     runs-on: ubuntu-latest
 
     steps:
@@ -30,6 +58,17 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
           echo "${{ secrets.ENV_FILE }}" > ${{ secrets.EC2_PATH }}/.env
+          echo "IMAGE_CLASSIFIER_BACKEND_TAG=${{ github.sha }}-image-classifier-backend" >> ${{ secrets.EC2_PATH }}/.env
+          echo "IMAGE_CLASSIFIER_FRONTEND_TAG=${{ github.sha }}-image-classifier-frontend" >> ${{ secrets.EC2_PATH }}/.env
+
+    - name: Docker login
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
     - name: Deploy with Docker Compose
       uses: appleboy/ssh-action@master
@@ -39,4 +78,5 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
           cd ${{ secrets.EC2_PATH }}
-          docker-compose -f docker-compose.prod.yml up --build -d
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d
