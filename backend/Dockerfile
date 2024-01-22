@@ -12,6 +12,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Install postgresql client
@@ -23,7 +24,7 @@ RUN pip install --extra-index-url https://download.pytorch.org/whl/cpu/ torch to
 
 # Install Python dependencies
 COPY requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the Django app source code
 COPY . /app/
@@ -32,8 +33,10 @@ COPY . /app/
 EXPOSE 8000
 
 # Grant execute permission to the start.sh script
-RUN sed -i 's/\r$//' start.sh  && \  
-        chmod +x start.sh
+RUN sed -i 's/\r$//g' start.sh
+RUN chmod +x start.sh
 
-# Run Django development server
-CMD ["./start.sh"]
+# Run superviosr
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+ENTRYPOINT ["/usr/bin/supervisord"]

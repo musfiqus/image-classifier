@@ -39,17 +39,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  celery:
-    image: musfiqus/portfolio_server:${IMAGE_CLASSIFIER_BACKEND_TAG}
-    command: celery -A core worker --loglevel=info
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - django
-      - redis
-    env_file:
-      - .env
-
   redis:
     image: redis:latest
     command: --port ${REDIS_CONTAINER_PORT} 
